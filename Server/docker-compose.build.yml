@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  card-api:
+    image: arsernst/card-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile

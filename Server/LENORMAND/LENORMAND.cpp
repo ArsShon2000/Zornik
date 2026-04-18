@@ -67,36 +67,15 @@ std::string LENORMAND::readFileCombinations(int firstcardID, int secondcardID)
     return "Combination not found";
 }
 
-nlohmann::json LENORMAND::addCombination(int cardID) 
+nlohmann::json LENORMAND::addCombination(std::vector<int>& ids)
 {
-    for (int id : combinations) 
+    if (ids.size() >= 2 && ids.size() <= 3)
     {
-        if (id == cardID)
+        std::vector<std::string> combinationsDatas;
+        for (size_t i = 0; i < ids.size() - 1; ++i) 
         {
-            if (combinations.size() >= 2)
-            {
-                nlohmann::json result;
-                result["combination"] = nlohmann::json::array();
-                for (const auto& text : combinationsDatas)
-                {
-                    result["combination"].push_back(nlohmann::json{ {"text", text} });
-                }
-
-                return result;
-            }
-            else return nlohmann::json{};
-        }
-    }
-
-    combinations.push_back(cardID);
-    combinationsDatas.clear();
-
-    if (combinations.size() >= 2) 
-    {
-        for (size_t i = 0; i < combinations.size() - 1; ++i) 
-        {
-            combinationsDatas.push_back(readFileCombinations(combinations[i], combinations[i + 1]));
-            combinationsDatas.push_back(readFileCombinations(combinations[i + 1], combinations[i]));
+            combinationsDatas.push_back(readFileCombinations(ids[i], ids[i + 1]));
+            combinationsDatas.push_back(readFileCombinations(ids[i + 1], ids[i]));
         }
         nlohmann::json result;
         for (const auto& text : combinationsDatas) 
@@ -106,50 +85,4 @@ nlohmann::json LENORMAND::addCombination(int cardID)
         return result;
     }
     return nlohmann::json{};
-}
-
-nlohmann::json LENORMAND::deleteCombination(int cardID)
-{
-    auto it = std::find(combinations.begin(), combinations.end(), cardID);
-    if (it != combinations.end())
-    {
-        combinations.erase(it);
-        combinationsDatas.clear();
-
-        if (combinations.size() >= 2)
-        {
-            for (size_t i = 0; i < combinations.size() - 1; ++i)
-            {
-                combinationsDatas.push_back(readFileCombinations(combinations[i], combinations[i + 1]));
-                combinationsDatas.push_back(readFileCombinations(combinations[i + 1], combinations[i]));
-            }
-            nlohmann::json result;
-            for (const auto& text : combinationsDatas)
-            {
-                result["combination"].push_back({ {"text", text} });
-            }
-            return result;
-        }
-        else return nlohmann::json{}; // Если карт меньше 2, возвращаем пустой JSON
-    }
-    else
-    {
-        if (combinations.size() >= 2)
-        {
-            nlohmann::json result;
-            result["combination"] = nlohmann::json::array();
-            for (const auto& text : combinationsDatas)
-            {
-                result["combination"].push_back(nlohmann::json{ {"text", text} });
-            }
-
-            return result;
-        }
-        else return nlohmann::json{};   // 
-    }
-}
-
-void LENORMAND::printCombinations() 
-{
-    for (const auto& item : combinationsDatas) std::cout << item << std::endl;
 }

@@ -21,16 +21,10 @@ public:
 
 	std::string readFileCombinations(int firstcardID, int secondcardID);
 
-	nlohmann::json addCombination(int cardID);
-
-	nlohmann::json deleteCombination(int cardID);
-
-	void printCombinations();
+	nlohmann::json addCombination(std::vector<int>& ids);
 
 private:
 
 	std::map<int, nlohmann::json> allCards{};
-	std::vector<int> combinations;
-	std::vector<std::string> combinationsDatas;
 
 };

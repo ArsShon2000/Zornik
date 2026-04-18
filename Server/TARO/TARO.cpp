@@ -109,57 +109,17 @@ std::string TARO::readFileCombinations(int firstcardID, int secondcardID)  // ф
     return "Combination not found";
 }
 
-//void addCombination(int cardID) // заносит карту в вектор combinations
-//{
-//
-//}
-//// проверка на индивидуальность 
-//// после добавления id проверяем vector combinations и если >=2 вызываем readFileCombinations
-//// первый раз в качестве firstCardID передается элемент под индексом 0 из вектора combinations
-//// в качестве secondCardID эленмент под индексом 1. Второй раз наоборот. Если в векторе 3 элемента, функция readFileCombinations вызывается 4 раза.
-//
-//void deleteCombination(int cardID) // удаляет карту из вектора combinations
-//{
-//
-//}
-////deleteCombination
-
-nlohmann::json TARO::addCombination(int cardID)
+nlohmann::json TARO::addCombination(std::vector<int>& ids)
 {
-    // 1. Проверка на индивидуальность (чтобы одна и та же карта не добавилась дважды)
-    for (int id : combinations) 
+    // Если в векторе 2 и более элемента — вычисляем все возможные пары
+    if (ids.size() >= 2 && ids.size() <= 3)
     {
-        if (id == cardID)
-        {
-            if (combinations.size() >= 2)
-            {
-                nlohmann::json result;
-                result["combination"] = nlohmann::json::array();
-                for (const auto& text : combinationsDatas)
-                {
-                    result["combination"].push_back(nlohmann::json{ {"text", text} });
-                }
-
-                return result;
-            }
-            else return nlohmann::json{};
-        }
-    }
-
-    // 2. Добавляем ID в вектор
-    combinations.push_back(cardID);
-
-    // 3. Очищаем старые строковые данные при любом изменении состава
-    combinationsDatas.clear();
-
-    // 4. Если в векторе 2 и более элемента — вычисляем все возможные пары
-    if (combinations.size() >= 2)
-    {
+        std::vector<std::string> combinationsDatas;
         // Идем только по соседним парам: (0,1) и (1,10)
-        for (size_t i = 0; i < combinations.size() - 1; ++i) 
+        for (size_t i = 0; i < ids.size() - 1; ++i) 
         {
-            int first = combinations[i];
-            int second = combinations[i + 1];
+            int first = ids[i];
+            int second = ids[i + 1];
 
             // 1. Пара AB (например, 0 и 1)
             combinationsDatas.push_back(readFileCombinations(first, second));
@@ -179,66 +139,3 @@ nlohmann::json TARO::addCombination(int cardID)
     }
     else return nlohmann::json{}; // Если карт меньше 2, возвращаем пустой JSON
 }
-
-nlohmann::json TARO::deleteCombination(int cardID)
-{
-    // 1. Ищем и удаляем ID из вектора выбранных карт
-    auto it = std::find(combinations.begin(), combinations.end(), cardID);
-    if (it != combinations.end()) 
-    {
-        combinations.erase(it);
-
-        // 2. Очищаем результаты, так как набор карт изменился
-        combinationsDatas.clear();
-
-        // 3. Пересчитываем комбинации для оставшихся карт (если их >= 2)
-        if (combinations.size() >= 2) 
-        {
-            for (size_t i = 0; i < combinations.size(); ++i) 
-            {
-                for (size_t j = 0; j < combinations.size(); ++j) 
-                {
-                    if (i == j) continue;
-
-                    combinationsDatas.push_back(readFileCombinations(combinations[i], combinations[j]));
-                }
-            }
-
-            nlohmann::json result;
-            result["combination"] = nlohmann::json::array();
-            for (const auto& text : combinationsDatas)
-            {
-                result["combination"].push_back(nlohmann::json{ {"text", text} });
-            }
-
-            return result;
-        }
-		else return nlohmann::json{}; // Если карт меньше 2, возвращаем пустой JSON
-    }
-    else
-    {
-        if (combinations.size() >= 2)
-        {
-            nlohmann::json result;
-            result["combination"] = nlohmann::json::array();
-            for (const auto& text : combinationsDatas)
-            {
-                result["combination"].push_back(nlohmann::json{ {"text", text} });
-            }
-
-            return result;
-        }
-        else return nlohmann::json{};   // 
-    }
-}
-
-void TARO::printCombinations()
-{
-    for (const auto& item : combinationsDatas)
-    {
-        std::cout  << item << std::endl;
-    }
-    std::cout << std::endl;
-}
-
-

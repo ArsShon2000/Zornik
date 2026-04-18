@@ -15,7 +15,6 @@
 #include <regex>
 #include <string>
 
-#include "../CardRepository/CardRepository.hpp"
 #include "../TARO/TARO.hpp"
 #include "../LENORMAND/LENORMAND.hpp"
 
@@ -45,7 +44,6 @@ class CardHttpServer : public std::enable_shared_from_this<CardHttpServer>
 public:
     CardHttpServer(
         net::io_context& ioContext,
-        std::shared_ptr<CardRepository> repository,
         std::string host,
         std::uint16_t port,
 		TARO& taro,
@@ -53,7 +51,6 @@ public:
     )
         : ioContext_(ioContext)
         , acceptor_(net::make_strand(ioContext))
-        , repository_(std::move(repository))
         , host_(std::move(host))
         , port_(port)
 		, taro_(taro)
@@ -226,7 +223,7 @@ private:
 
             case http::verb::post:
                 if (routeInfo->routeType == RouteType::Combination)
-                    return HandlePost(routeInfo->id, request, routeInfo->cardType);
+                    return HandlePost(request, routeInfo->cardType);
                 break;
 
             case http::verb::delete_:
@@ -281,18 +278,7 @@ private:
         {
             card = lenormand_.getCardInfo(id);
         }
-        //auto card = repository_->GetById(id);
-		//if (!card.get.has_value())
-  //      {
-  //          return MakeJsonResponse(
-  //              http::status::not_found,
-  //              {
-  //                  {"error", "Card not found"},
-  //                  {"id", id}
-  //              },
-  //              request.version(),
-  //              request.keep_alive());
-  //      }
+
 		std::cout << "Card data for ID " << id << ": " << card.dump(4) << std::endl;
         return MakeJsonResponse(
             http::status::ok,
@@ -303,7 +289,7 @@ private:
             request.keep_alive());
     }
 
-    Response HandlePost(const int id, const Request& request, CardType cardType)
+    Response HandlePost(const Request& request, CardType cardType)
     {
         if (request.body().empty())
         {
@@ -316,19 +302,18 @@ private:
                 request.keep_alive());
         }
 
-        //auto j = nlohmann::json::parse(request.body());
+        auto j = nlohmann::json::parse(request.body());
 
-        //Card card = j.get<Card>();
-        //card.id = id;
+        std::vector<int> ids = j["ids"].get<std::vector<int>>();
 
         nlohmann::json card;
         if (cardType == CardType::Taro)
         {
-            card = taro_.addCombination(id);
+            card = taro_.addCombination(ids);
         }
         else
         {
-            card = lenormand_.addCombination(id);
+            card = lenormand_.addCombination(ids);
         }
 
         if (card.empty())
@@ -355,33 +340,31 @@ private:
 
     Response HandleDelete(const int id, const Request& request, CardType cardType)
     {
-        nlohmann::json card;
-        if (cardType == CardType::Taro)
-        {
-            card = taro_.deleteCombination(id);
-        }
-        else
-        {
-            card = lenormand_.deleteCombination(id);
-        }
+        //nlohmann::json card;
+        //if (cardType == CardType::Taro)
+        //{
+        //    card = taro_.deleteCombination(id);
+        //}
+        //else
+        //{
+        //    card = lenormand_.deleteCombination(id);
+        //}
 
-        if (card.empty())
-        {
             return MakeJsonResponse(
                 http::status::not_found,
                 {
                     {"error", "Карта была удалена из комбинации или отсутсвовала."},
-                    {"data", card}
+                    {"data", {}}
                 },
                 request.version(),
                 request.keep_alive());
-        }
+        
 
         return MakeJsonResponse(
             http::status::ok,
             {
                 {"message", "Карта удалена из комбинации или отсутствует."},
-                {"data", card}
+                {"data", {}}
             },
             request.version(),
             request.keep_alive());
@@ -390,9 +373,9 @@ private:
     static std::optional<RouteInfo> ParseRoute(const std::string& path)
     {
         static const std::regex cardsPattern(R"(^/taro/cards/([0-9]+)$)");
-        static const std::regex combinationPattern(R"(^/taro/combination/([0-9]+)$)");
+        static const std::regex combinationPattern(R"(^/taro/combination$)");
         static const std::regex lenormandСardsPattern(R"(^/lenormand/cards/([0-9]+)$)");
-        static const std::regex lenormandСombinationPattern(R"(^/lenormand/combination/([0-9]+)$)");
+        static const std::regex lenormandСombinationPattern(R"(^/lenormand/combination$)");
 
         std::smatch match;
 
@@ -424,7 +407,7 @@ private:
         {
             try
             {
-                return RouteInfo{ RouteType::Combination, CardType::Taro, std::stoi(match[1].str()) };
+                return RouteInfo{ RouteType::Combination, CardType::Taro };
             }
             catch (...)
             {
@@ -436,7 +419,7 @@ private:
         {
             try
             {
-                return RouteInfo{ RouteType::Combination, CardType::Lenormand, std::stoi(match[1].str()) };
+                return RouteInfo{ RouteType::Combination, CardType::Lenormand };
             }
             catch (...)
             {
@@ -483,15 +466,14 @@ private:
 private:
     net::io_context& ioContext_;
     tcp::acceptor acceptor_;  // это объект, который слушает адрес и порт и принимает входящие TCP-соединения.
-    std::shared_ptr<CardRepository> repository_;
     std::string host_;
     std::uint16_t port_;
     TARO taro_;
     LENORMAND lenormand_;
 };
 
-// curl -X POST http://127.0.0.1:8080/combination/1 -H "Content-Type: application/json" -d "{\"name\":\"The Fool\"}"
+// curl -X POST http://127.0.0.1:8080/taro/combination/1 -H "Content-Type: application/json" -d "{\"name\":\"The Fool\"}"
 //
-// curl -X DELETE http://127.0.0.1:8080/combination/1
+// curl -X DELETE http://127.0.0.1:8080/taro/combination/1
 //
-// curl http://127.0.0.1:8080/cards/1
+// curl http://127.0.0.1:8080/taro/cards/1

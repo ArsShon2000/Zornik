@@ -75,7 +75,7 @@ nlohmann::json LENORMAND::addCombination(std::vector<int>& ids)
         for (size_t i = 0; i < ids.size() - 1; ++i) 
         {
             combinationsDatas.push_back(readFileCombinations(ids[i], ids[i + 1]));
-            combinationsDatas.push_back(readFileCombinations(ids[i + 1], ids[i]));
+            /*combinationsDatas.push_back(readFileCombinations(ids[i + 1], ids[i]));*/ // изменяем для строго вывода информации сочетания только с одной карты 
         }
         nlohmann::json result;
         for (const auto& text : combinationsDatas) 

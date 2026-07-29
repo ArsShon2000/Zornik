@@ -1,4 +1,4 @@
-﻿#include "TARO.hpp"
+#include "TARO.hpp"
 #include "DECK.hpp"
 
 TARO::TARO() 
@@ -125,7 +125,7 @@ nlohmann::json TARO::addCombination(std::vector<int>& ids)
             combinationsDatas.push_back(readFileCombinations(first, second));
 
             // 2. Пара BA (например, 1 и 0)
-            combinationsDatas.push_back(readFileCombinations(second, first));
+            /*combinationsDatas.push_back(readFileCombinations(second, first));*/ // изменяем для строго вывода информации сочетания только с одной карты
         }
 
         nlohmann::json result;
